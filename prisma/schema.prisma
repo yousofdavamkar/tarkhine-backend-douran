@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model User {
+  id            Int           @id @default(autoincrement())
+  username      String        @unique
+  passwordHash  String        @map("password_hash")
+  role          UserRole      @default(USER)
+  isActive      Boolean       @default(true) @map("is_active")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  refreshTokens RefreshToken[]
+  resources     Resource[]
+
+  @@index([username])
+  @@index([isActive])
+  @@index([role])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Resource {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  status      String    @default("active")
+  category    String?
+  userId      Int?      @map("user_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([category])
+  @@index([createdAt])
+  @@index([userId])
+  @@map("resources")
+}
+
+model Menu {
+  id        Int        @id @default(autoincrement())
+  name      String
+  logo      String?    @map("logo")
+  logoAlt   String?    @map("logo_alt")
+  isActive  Boolean    @default(true) @map("is_active")
+  position  Int        @default(0)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  items     MenuItem[]
+
+  @@index([isActive])
+  @@index([position])
+  @@map("menus")
+}
+
+model MenuItem {
+  id        Int          @id @default(autoincrement())
+  menuId    Int          @map("menu_id")
+  name      String
+  link      String
+  isActive  Boolean      @default(true) @map("is_active")
+  position  Int          @default(0)
+  menu      Menu         @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  subitems  SubMenuItem[]
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  @@index([menuId])
+  @@index([isActive])
+  @@index([position])
+  @@map("menu_items")
+}
+
+model SubMenuItem {
+  id        Int      @id @default(autoincrement())
+  menuItemId Int     @map("menu_item_id")
+  name      String
+  link      String
+  isActive  Boolean  @default(true) @map("is_active")
+  position  Int      @default(0)
+  menuItem  MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([menuItemId])
+  @@index([isActive])
+  @@index([position])
+  @@map("sub_menu_items")
+}
