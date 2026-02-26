@@ -22,7 +22,6 @@ model User {
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
   refreshTokens RefreshToken[]
-  resources     Resource[]
 
   @@index([username])
   @@index([isActive])
@@ -43,23 +42,7 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
-model Resource {
-  id          Int       @id @default(autoincrement())
-  name        String
-  description String?
-  status      String    @default("active")
-  category    String?
-  userId      Int?      @map("user_id")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  @@index([status])
-  @@index([category])
-  @@index([createdAt])
-  @@index([userId])
-  @@map("resources")
-}
 
 model Menu {
   id         Int        @id @default(autoincrement())
@@ -102,4 +85,18 @@ model Setting {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("settings")
+}
+
+model Slider {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(255)
+  btnTitle  String   @db.VarChar(100)
+  link      String   @db.VarChar(255)
+  image     String?  @db.VarChar(255)
+  isActive  Boolean  @default(true)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("sliders")
 }

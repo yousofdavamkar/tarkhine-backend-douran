@@ -5,6 +5,7 @@ const uploadRoutes = require('./upload');
 const menuRoutes = require('./menu');
 const userRoutes = require('./user');
 const logoRoutes = require('./logo');
+const sliderRoutes = require('./slider');
 
 const routes = (app) => {
   // Health check route (no /api prefix)
@@ -13,6 +14,7 @@ const routes = (app) => {
   // API routes
   app.use('/api/users', userRoutes);
   app.use('/api/logo', logoRoutes);
+  app.use('/api/sliders', sliderRoutes);
   app.use('/api', exampleRoutes);
   app.use('/api', uploadRoutes);
   app.use('/api/menus', menuRoutes);

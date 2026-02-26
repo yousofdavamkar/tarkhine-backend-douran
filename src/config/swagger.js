@@ -52,35 +52,7 @@ const swaggerConfig = {
           isActive: { type: 'boolean' },
         },
       },
-      Resource: {
-        type: 'object',
-        properties: {
-          id: { type: 'number' },
-          name: { type: 'string' },
-          description: { type: 'string' },
-          status: { type: 'string' },
-          category: { type: 'string' },
-          userId: { type: 'number' },
-          createdAt: { type: 'string', format: 'date-time' },
-          updatedAt: { type: 'string', format: 'date-time' },
-        },
-      },
-      ResourceListResponse: {
-        type: 'object',
-        properties: {
-          status: { type: 'string', example: 'success' },
-          data: {
-            type: 'object',
-            properties: {
-              items: {
-                type: 'array',
-                items: { $ref: '#/components/schemas/Resource' }
-              },
-              pagination: { $ref: '#/components/schemas/Pagination' }
-            }
-          }
-        }
-      },
+
       SubMenu: {
         type: 'object',
         properties: {
@@ -121,6 +93,36 @@ const swaggerConfig = {
               items: {
                 type: 'array',
                 items: { $ref: '#/components/schemas/Menu' }
+              },
+              pagination: { $ref: '#/components/schemas/Pagination' }
+            }
+          }
+        }
+      },
+      Slider: {
+        type: 'object',
+        properties: {
+          id: { type: 'number' },
+          title: { type: 'string' },
+          btnTitle: { type: 'string' },
+          link: { type: 'string' },
+          image: { type: 'string', nullable: true },
+          isActive: { type: 'boolean' },
+          position: { type: 'number' },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      SliderListResponse: {
+        type: 'object',
+        properties: {
+          status: { type: 'string', example: 'success' },
+          data: {
+            type: 'object',
+            properties: {
+              items: {
+                type: 'array',
+                items: { $ref: '#/components/schemas/Slider' }
               },
               pagination: { $ref: '#/components/schemas/Pagination' }
             }
@@ -1462,6 +1464,223 @@ const swaggerConfig = {
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/JSendError' }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/sliders': {
+      get: {
+        summary: 'Get all sliders',
+        tags: ['Sliders'],
+        parameters: [
+          {
+            name: 'page',
+            in: 'query',
+            description: 'Page number',
+            schema: { type: 'number', default: 1 }
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            description: 'Items per page',
+            schema: { type: 'number', default: 10 }
+          }
+        ],
+        responses: {
+          '200': {
+            description: 'List of sliders',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/SliderListResponse' }
+              }
+            }
+          }
+        }
+      },
+      post: {
+        summary: 'Create a new slider',
+        tags: ['Sliders'],
+        security: [{ CookieAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['title', 'btnTitle', 'link'],
+                properties: {
+                  title: { type: 'string', example: 'Summer Special' },
+                  btnTitle: { type: 'string', example: 'Order Now' },
+                  link: { type: 'string', example: '/menu/summer' },
+                  isActive: { type: 'boolean', example: true },
+                  position: { type: 'number', example: 1 }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          '201': {
+            description: 'Slider created successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string', example: 'success' },
+                    data: { $ref: '#/components/schemas/Slider' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/sliders/{id}': {
+      get: {
+        summary: 'Get a slider by ID',
+        tags: ['Sliders'],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            description: 'Slider ID',
+            schema: { type: 'number' }
+          }
+        ],
+        responses: {
+          '200': {
+            description: 'Slider details',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string', example: 'success' },
+                    data: { $ref: '#/components/schemas/Slider' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      put: {
+        summary: 'Update a slider',
+        tags: ['Sliders'],
+        security: [{ CookieAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            description: 'Slider ID',
+            schema: { type: 'number' }
+          }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                minProperties: 1,
+                properties: {
+                  title: { type: 'string', example: 'Updated Title' },
+                  btnTitle: { type: 'string', example: 'View More' },
+                  link: { type: 'string', example: '/updated-link' },
+                  isActive: { type: 'boolean', example: false },
+                  position: { type: 'number', example: 2 }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          '200': {
+            description: 'Slider updated successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string', example: 'success' },
+                    data: { $ref: '#/components/schemas/Slider' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      delete: {
+        summary: 'Delete a slider',
+        tags: ['Sliders'],
+        security: [{ CookieAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            description: 'Slider ID',
+            schema: { type: 'number' }
+          }
+        ],
+        responses: {
+          '200': {
+            description: 'Slider deleted successfully'
+          }
+        }
+      }
+    },
+    '/api/sliders/{id}/image': {
+      put: {
+        summary: 'Upload or replace slider image',
+        tags: ['Sliders'],
+        security: [{ CookieAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            description: 'Slider ID',
+            schema: { type: 'number' }
+          }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'multipart/form-data': {
+              schema: {
+                type: 'object',
+                required: ['image'],
+                properties: {
+                  image: {
+                    type: 'string',
+                    format: 'binary',
+                    description: 'Slider background image file (jpg, jpeg, png, svg, webp - max 5MB)'
+                  }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          '200': {
+            description: 'Image uploaded successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string', example: 'success' },
+                    data: { $ref: '#/components/schemas/Slider' }
+                  }
+                }
               }
             }
           }

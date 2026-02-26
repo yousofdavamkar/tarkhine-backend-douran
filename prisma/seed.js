@@ -10,7 +10,7 @@ async function main() {
   console.log('🧹 Cleaning existing data...');
   await prisma.subMenu.deleteMany();
   await prisma.menu.deleteMany();
-  await prisma.resource.deleteMany();
+  await prisma.slider.deleteMany();
   await prisma.refreshToken.deleteMany();
   await prisma.user.deleteMany();
   console.log('✅ Data cleaned successfully');
@@ -57,81 +57,7 @@ async function main() {
   ]);
   console.log(`✅ Created ${users.length} users`);
 
-  // Seed Resources
-  console.log('📦 Seeding resources...');
-  const resources = await Promise.all([
-    prisma.resource.create({
-      data: {
-        name: 'User Authentication API',
-        description: 'Endpoints for user authentication and authorization',
-        status: 'active',
-        category: 'Authentication',
-        userId: users[0].id,
-      },
-    }),
-    prisma.resource.create({
-      data: {
-        name: 'Database Connection Pool',
-        description: 'PostgreSQL connection pool configuration',
-        status: 'active',
-        category: 'Infrastructure',
-        userId: users[0].id,
-      },
-    }),
-    prisma.resource.create({
-      data: {
-        name: 'Rate Limiter Service',
-        description: 'API rate limiting and DDoS protection',
-        status: 'active',
-        category: 'Security',
-        userId: users[1].id,
-      },
-    }),
-    prisma.resource.create({
-      data: {
-        name: 'File Upload Handler',
-        description: 'Multer-based file upload system',
-        status: 'active',
-        category: 'Utilities',
-        userId: users[1].id,
-      },
-    }),
-    prisma.resource.create({
-      data: {
-        name: 'API Documentation',
-        description: 'Scalar-powered OpenAPI documentation',
-        status: 'active',
-        category: 'Documentation',
-        userId: users[2].id,
-      },
-    }),
-    prisma.resource.create({
-      data: {
-        name: 'Logging System',
-        description: 'Morgan HTTP request logger',
-        status: 'active',
-        category: 'Monitoring',
-        userId: users[2].id,
-      },
-    }),
-    prisma.resource.create({
-      data: {
-        name: 'Email Service',
-        description: 'Notification and email service (pending)',
-        status: 'inactive',
-        category: 'Communication',
-      },
-    }),
-    prisma.resource.create({
-      data: {
-        name: 'Cache Layer',
-        description: 'Redis caching implementation (planned)',
-        status: 'inactive',
-        category: 'Performance',
-      },
-    }),
-  ]);
-  console.log(`✅ Created ${resources.length} resources`);
+
 
   // Seed Menus and SubMenus
   console.log('📋 Seeding flat menus...');
@@ -139,7 +65,7 @@ async function main() {
   // Home Menu (No submenus)
   const homeMenu = await prisma.menu.create({
     data: {
-      name: 'Home',
+      name: 'صفحه اصلی',
       link: '/',
       hasSubmenu: false,
       position: 1,
@@ -149,15 +75,16 @@ async function main() {
   // Products Menu (Has submenus)
   const productsMenu = await prisma.menu.create({
     data: {
-      name: 'Products',
-      link: '/products',
+      name: 'منو',
+      link: '/menu',
       hasSubmenu: true,
       position: 2,
       submenus: {
         create: [
-          { name: 'All Products', link: '/products/all', position: 1 },
-          { name: 'Categories', link: '/products/categories', position: 2 },
-          { name: 'Featured', link: '/products/featured', position: 3 },
+          { name: 'غذای اصلی', link: '/menu/main-course', position: 1 },
+          { name: 'پیش غذا', link: '/menu/appetizers', position: 2 },
+          { name: 'دسر', link: '/menu/desserts', position: 3 },
+          { name: 'نوشیدنی', link: '/menu/beverages', position: 4 },
         ]
       }
     }
@@ -166,15 +93,15 @@ async function main() {
   // Users Menu (Admin Only - has submenus)
   const usersMenu = await prisma.menu.create({
     data: {
-      name: 'Users',
+      name: 'کاربران',
       link: '/users',
       hasSubmenu: true,
       position: 3,
       submenus: {
         create: [
-          { name: 'User List', link: '/users/list', position: 1 },
-          { name: 'User Roles', link: '/users/roles', position: 2 },
-          { name: 'Permissions', link: '/users/permissions', position: 3 },
+          { name: 'لیست کاربران', link: '/users/list', position: 1 },
+          { name: 'نقش‌های کاربری', link: '/users/roles', position: 2 },
+          { name: 'دسترسی‌ها', link: '/users/permissions', position: 3 },
         ]
       }
     }
@@ -183,14 +110,16 @@ async function main() {
   // Documentation Menu (No submenus)
   const docsMenu = await prisma.menu.create({
     data: {
-      name: 'Documentation',
-      link: '/docs',
+      name: 'شعبه‌ها',
+      link: '/branches',
       hasSubmenu: true,
       position: 4,
       submenus: {
         create: [
-          { name: 'Getting Started', link: '/docs/getting-started', position: 1 },
-          { name: 'API Reference', link: '/docs/api', position: 2 },
+          { name: 'اکباتان', link: '/branches/ekbatan', position: 1 },
+          { name: 'چالوس', link: '/branches/chaloos', position: 2 },
+          { name: 'اقدسیه', link: '/branches/aghdasieh', position: 3 },
+          { name: 'ونک', link: '/branches/vanak', position: 4 },
         ]
       }
     }
@@ -198,12 +127,44 @@ async function main() {
 
   console.log(`✅ Created 4 flat menus with submenus`);
 
+  // Seed Sliders
+  console.log('🖼️ Seeding sliders...');
+  const slidersCreated = await prisma.slider.createMany({
+    data: [
+      {
+        title: 'تجربه غذای سالم و گیاهی به سبک ترخینه1',
+        btnTitle: 'سفارش غذا',
+        link: '#',
+        image: null,
+        position: 1,
+        isActive: true,
+      },
+      {
+        title: 'تجربه غذای سالم و گیاهی به سبک ترخینه2',
+        btnTitle: 'سفارش غذا',
+        link: '#',
+        image: null,
+        position: 2,
+        isActive: true,
+      },
+      {
+        title: 'تجربه غذای سالم و گیاهی به سبک ترخینه3',
+        btnTitle: 'سفارش غذا',
+        link: '#',
+        image: null,
+        position: 3,
+        isActive: true,
+      }
+    ]
+  });
+  console.log(`✅ Created ${slidersCreated.count} sliders`);
+
   console.log('\n✨ Database seeding completed successfully!');
   console.log('\n📝 Seeded Data Summary:');
   console.log(`   - ${users.length} users (all with password: password123)`);
-  console.log(`   - ${resources.length} resources`);
-  console.log(`   - 4 root Menus (Home, Products, Users, Docs)`);
+  console.log(`   - 4 root Menus (صفحه اصلی، منو، کاربران، شعبه‌ها)`);
   console.log(`   - Multiple SubMenus attached`);
+  console.log(`   - ${slidersCreated.count} sliders`);
   console.log('\n🔐 Test Accounts:');
   console.log('   - admin / password123');
   console.log('   - user1 / password123');
