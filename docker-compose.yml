@@ -1,6 +1,20 @@
-version: '3.8'
-
 services:
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tarkhine_migrate
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-tarkhine_db}?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "npx prisma generate && npx prisma db push --skip-generate && npm run seed"
+    restart: "no"
+    networks:
+      - tarkhine_network
+
   app:
     build:
       context: .
@@ -26,15 +40,15 @@ services:
       - MAX_FILE_SIZE=${MAX_FILE_SIZE:-5242880}
       - ALLOWED_FILE_TYPES=${ALLOWED_FILE_TYPES:-image/jpeg,image/png,image/gif,application/pdf}
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     volumes:
       - .:/app
       - /app/node_modules
       - ./uploads:/app/uploads
       - ./logs:/app/logs
     restart: unless-stopped
-    command: sh -c "npx prisma generate && npx prisma migrate deploy && npm run seed && node server.js"
+    command: npm start
     networks:
       - tarkhine_network
 

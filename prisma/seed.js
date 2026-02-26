@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
@@ -8,8 +8,7 @@ async function main() {
 
   // Clear existing data (optional - remove if you want to keep existing data)
   console.log('🧹 Cleaning existing data...');
-  await prisma.subMenuItem.deleteMany();
-  await prisma.menuItem.deleteMany();
+  await prisma.subMenu.deleteMany();
   await prisma.menu.deleteMany();
   await prisma.resource.deleteMany();
   await prisma.refreshToken.deleteMany();
@@ -134,209 +133,77 @@ async function main() {
   ]);
   console.log(`✅ Created ${resources.length} resources`);
 
-  // Seed Menu with MenuItems and SubMenuItems
-  console.log('📋 Seeding menus...');
+  // Seed Menus and SubMenus
+  console.log('📋 Seeding flat menus...');
 
-  // Main Navigation Menu
-  const mainMenu = await prisma.menu.create({
+  // Home Menu (No submenus)
+  const homeMenu = await prisma.menu.create({
     data: {
-      name: 'Main Navigation',
-      logo: '/images/logo.png',
-      logoAlt: 'Company Logo',
-      isActive: true,
+      name: 'Home',
+      link: '/',
+      hasSubmenu: false,
       position: 1,
-      items: {
-        create: [
-          {
-            name: 'Home',
-            link: '/',
-            isActive: true,
-            position: 1,
-            subitems: {
-              create: [
-                {
-                  name: 'Dashboard',
-                  link: '/dashboard',
-                  isActive: true,
-                  position: 1,
-                },
-                {
-                  name: 'Analytics',
-                  link: '/analytics',
-                  isActive: true,
-                  position: 2,
-                },
-              ],
-            },
-          },
-          {
-            name: 'Products',
-            link: '/products',
-            isActive: true,
-            position: 2,
-            subitems: {
-              create: [
-                {
-                  name: 'All Products',
-                  link: '/products/all',
-                  isActive: true,
-                  position: 1,
-                },
-                {
-                  name: 'Categories',
-                  link: '/products/categories',
-                  isActive: true,
-                  position: 2,
-                },
-                {
-                  name: 'Featured',
-                  link: '/products/featured',
-                  isActive: true,
-                  position: 3,
-                },
-              ],
-            },
-          },
-          {
-            name: 'Users',
-            link: '/users',
-            isActive: true,
-            position: 3,
-            subitems: {
-              create: [
-                {
-                  name: 'User List',
-                  link: '/users/list',
-                  isActive: true,
-                  position: 1,
-                },
-                {
-                  name: 'User Roles',
-                  link: '/users/roles',
-                  isActive: true,
-                  position: 2,
-                },
-                {
-                  name: 'Permissions',
-                  link: '/users/permissions',
-                  isActive: true,
-                  position: 3,
-                },
-              ],
-            },
-          },
-          {
-            name: 'Settings',
-            link: '/settings',
-            isActive: true,
-            position: 4,
-            subitems: {
-              create: [
-                {
-                  name: 'Profile',
-                  link: '/settings/profile',
-                  isActive: true,
-                  position: 1,
-                },
-                {
-                  name: 'Security',
-                  link: '/settings/security',
-                  isActive: true,
-                  position: 2,
-                },
-                {
-                  name: 'Notifications',
-                  link: '/settings/notifications',
-                  isActive: true,
-                  position: 3,
-                },
-              ],
-            },
-          },
-          {
-            name: 'Documentation',
-            link: '/docs',
-            isActive: true,
-            position: 5,
-            subitems: {
-              create: [
-                {
-                  name: 'Getting Started',
-                  link: '/docs/getting-started',
-                  isActive: true,
-                  position: 1,
-                },
-                {
-                  name: 'API Reference',
-                  link: '/docs/api',
-                  isActive: true,
-                  position: 2,
-                },
-              ],
-            },
-          },
-        ],
-      },
-    },
+    }
   });
 
-  // Footer Menu
-  const footerMenu = await prisma.menu.create({
+  // Products Menu (Has submenus)
+  const productsMenu = await prisma.menu.create({
     data: {
-      name: 'Footer Navigation',
-      isActive: true,
+      name: 'Products',
+      link: '/products',
+      hasSubmenu: true,
       position: 2,
-      items: {
+      submenus: {
         create: [
-          {
-            name: 'About',
-            link: '/about',
-            isActive: true,
-            position: 1,
-            subitems: {
-              create: [],
-            },
-          },
-          {
-            name: 'Contact',
-            link: '/contact',
-            isActive: true,
-            position: 2,
-            subitems: {
-              create: [],
-            },
-          },
-          {
-            name: 'Privacy Policy',
-            link: '/privacy',
-            isActive: true,
-            position: 3,
-            subitems: {
-              create: [],
-            },
-          },
-          {
-            name: 'Terms of Service',
-            link: '/terms',
-            isActive: true,
-            position: 4,
-            subitems: {
-              create: [],
-            },
-          },
-        ],
-      },
-    },
+          { name: 'All Products', link: '/products/all', position: 1 },
+          { name: 'Categories', link: '/products/categories', position: 2 },
+          { name: 'Featured', link: '/products/featured', position: 3 },
+        ]
+      }
+    }
   });
 
-  console.log(`✅ Created 2 menus with nested items`);
+  // Users Menu (Admin Only - has submenus)
+  const usersMenu = await prisma.menu.create({
+    data: {
+      name: 'Users',
+      link: '/users',
+      hasSubmenu: true,
+      position: 3,
+      submenus: {
+        create: [
+          { name: 'User List', link: '/users/list', position: 1 },
+          { name: 'User Roles', link: '/users/roles', position: 2 },
+          { name: 'Permissions', link: '/users/permissions', position: 3 },
+        ]
+      }
+    }
+  });
+
+  // Documentation Menu (No submenus)
+  const docsMenu = await prisma.menu.create({
+    data: {
+      name: 'Documentation',
+      link: '/docs',
+      hasSubmenu: true,
+      position: 4,
+      submenus: {
+        create: [
+          { name: 'Getting Started', link: '/docs/getting-started', position: 1 },
+          { name: 'API Reference', link: '/docs/api', position: 2 },
+        ]
+      }
+    }
+  });
+
+  console.log(`✅ Created 4 flat menus with submenus`);
 
   console.log('\n✨ Database seeding completed successfully!');
   console.log('\n📝 Seeded Data Summary:');
   console.log(`   - ${users.length} users (all with password: password123)`);
   console.log(`   - ${resources.length} resources`);
-  console.log(`   - 2 menus (Main Navigation & Footer)`);
-  console.log(`   - Multiple menu items with sub-items`);
+  console.log(`   - 4 root Menus (Home, Products, Users, Docs)`);
+  console.log(`   - Multiple SubMenus attached`);
   console.log('\n🔐 Test Accounts:');
   console.log('   - admin / password123');
   console.log('   - user1 / password123');

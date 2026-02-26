@@ -81,20 +81,7 @@ const swaggerConfig = {
           }
         }
       },
-      SubMenuItem: {
-        type: 'object',
-        properties: {
-          id: { type: 'number' },
-          menuItemId: { type: 'number' },
-          name: { type: 'string' },
-          link: { type: 'string' },
-          isActive: { type: 'boolean' },
-          position: { type: 'number' },
-          createdAt: { type: 'string', format: 'date-time' },
-          updatedAt: { type: 'string', format: 'date-time' },
-        },
-      },
-      MenuItem: {
+      SubMenu: {
         type: 'object',
         properties: {
           id: { type: 'number' },
@@ -105,10 +92,6 @@ const swaggerConfig = {
           position: { type: 'number' },
           createdAt: { type: 'string', format: 'date-time' },
           updatedAt: { type: 'string', format: 'date-time' },
-          subitems: {
-            type: 'array',
-            items: { $ref: '#/components/schemas/SubMenuItem' }
-          },
         },
       },
       Menu: {
@@ -116,15 +99,15 @@ const swaggerConfig = {
         properties: {
           id: { type: 'number' },
           name: { type: 'string' },
-          logo: { type: 'string', nullable: true },
-          logoAlt: { type: 'string', nullable: true },
+          link: { type: 'string' },
+          hasSubmenu: { type: 'boolean' },
           isActive: { type: 'boolean' },
           position: { type: 'number' },
           createdAt: { type: 'string', format: 'date-time' },
           updatedAt: { type: 'string', format: 'date-time' },
-          items: {
+          submenus: {
             type: 'array',
-            items: { $ref: '#/components/schemas/MenuItem' }
+            items: { $ref: '#/components/schemas/SubMenu' }
           },
         },
       },
@@ -197,11 +180,11 @@ const swaggerConfig = {
         },
       },
     },
-    '/api/auth/signup': {
+    '/api/users/signup': {
       post: {
         summary: 'Create a new user account',
         description: 'Create a new user account. First registered user automatically becomes ADMIN.',
-        tags: ['Authentication'],
+        tags: ['Users'],
         requestBody: {
           required: true,
           content: {
@@ -274,10 +257,10 @@ const swaggerConfig = {
         }
       }
     },
-    '/api/auth/signin': {
+    '/api/users/signin': {
       post: {
         summary: 'Sign in to existing account',
-        tags: ['Authentication'],
+        tags: ['Users'],
         requestBody: {
           required: true,
           content: {
@@ -355,10 +338,10 @@ const swaggerConfig = {
         }
       }
     },
-    '/api/auth/signout': {
+    '/api/users/signout': {
       post: {
         summary: 'Sign out from current session',
-        tags: ['Authentication'],
+        tags: ['Users'],
         security: [{ CookieAuth: [] }],
         responses: {
           '200': {
@@ -397,10 +380,10 @@ const swaggerConfig = {
         }
       }
     },
-    '/api/auth/me': {
+    '/api/users/me': {
       get: {
         summary: 'Get current authenticated user',
-        tags: ['Authentication'],
+        tags: ['Users'],
         security: [{ CookieAuth: [] }],
         responses: {
           '200': {
@@ -433,11 +416,11 @@ const swaggerConfig = {
         }
       }
     },
-    '/api/admin/users': {
+    '/api/users': {
       get: {
         summary: 'Get all users (Admin only)',
         description: 'Retrieve a paginated list of all users with their roles and status',
-        tags: ['Admin'],
+        tags: ['Users'],
         security: [{ CookieAuth: [] }],
         parameters: [
           {
@@ -481,10 +464,10 @@ const swaggerConfig = {
         }
       }
     },
-    '/api/admin/users/{id}': {
+    '/api/users/{id}': {
       get: {
         summary: 'Get user by ID (Admin only)',
-        tags: ['Admin'],
+        tags: ['Users'],
         security: [{ CookieAuth: [] }],
         parameters: [
           {
@@ -542,11 +525,11 @@ const swaggerConfig = {
         }
       }
     },
-    '/api/admin/users/{id}/role': {
+    '/api/users/{id}/role': {
       put: {
         summary: 'Update user role (Admin only)',
         description: 'Change a user\'s role between ADMIN and USER. Cannot remove the last admin.',
-        tags: ['Admin'],
+        tags: ['Users'],
         security: [{ CookieAuth: [] }],
         parameters: [
           {
@@ -631,11 +614,11 @@ const swaggerConfig = {
         }
       }
     },
-    '/api/admin/users/{id}/status': {
+    '/api/users/{id}/status': {
       put: {
         summary: 'Toggle user active status (Admin only)',
         description: 'Activate or deactivate a user account. Cannot deactivate the last active admin.',
-        tags: ['Admin'],
+        tags: ['Users'],
         security: [{ CookieAuth: [] }],
         parameters: [
           {
@@ -702,11 +685,11 @@ const swaggerConfig = {
         }
       }
     },
-    '/api/admin/stats': {
+    '/api/users/stats': {
       get: {
         summary: 'Get system statistics (Admin only)',
         description: 'Retrieve system-wide user statistics including counts by role and status',
-        tags: ['Admin'],
+        tags: ['Users'],
         security: [{ CookieAuth: [] }],
         responses: {
           '200': {
@@ -1135,11 +1118,15 @@ const swaggerConfig = {
                     description: 'Menu name',
                     example: 'Main Navigation'
                   },
-                  logoAlt: {
+                  link: {
                     type: 'string',
-                    maxLength: 255,
-                    description: 'Logo alt text',
-                    example: 'Company Logo'
+                    description: 'Link URL',
+                    example: '/'
+                  },
+                  hasSubmenu: {
+                    type: 'boolean',
+                    description: 'Specifies if this menu contains submenus',
+                    example: true
                   },
                   isActive: {
                     type: 'boolean',
@@ -1151,6 +1138,17 @@ const swaggerConfig = {
                     minimum: 0,
                     description: 'Display position',
                     example: 1
+                  },
+                  submenus: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        name: { type: 'string', example: 'Home' },
+                        link: { type: 'string', example: '/home' },
+                        position: { type: 'number', example: 1 }
+                      }
+                    }
                   }
                 }
               }
@@ -1256,10 +1254,13 @@ const swaggerConfig = {
                     maxLength: 100,
                     example: 'Updated Menu Name'
                   },
-                  logoAlt: {
+                  link: {
                     type: 'string',
-                    maxLength: 255,
-                    example: 'Updated Logo Alt'
+                    example: '/updated'
+                  },
+                  hasSubmenu: {
+                    type: 'boolean',
+                    example: false
                   },
                   isActive: {
                     type: 'boolean',
@@ -1269,6 +1270,17 @@ const swaggerConfig = {
                     type: 'number',
                     minimum: 0,
                     example: 2
+                  },
+                  submenus: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        name: { type: 'string', example: 'Home' },
+                        link: { type: 'string', example: '/home' },
+                        position: { type: 'number', example: 1 }
+                      }
+                    }
                   }
                 }
               }
@@ -1368,20 +1380,36 @@ const swaggerConfig = {
         }
       }
     },
-    '/api/menus/{id}/logo': {
-      put: {
-        summary: 'Upload or update menu logo',
-        tags: ['Menus'],
-        security: [{ CookieAuth: [] }],
-        parameters: [
-          {
-            name: 'id',
-            in: 'path',
-            required: true,
-            description: 'Menu ID',
-            schema: { type: 'number' }
+    '/api/logo': {
+      get: {
+        summary: 'Get global site logo',
+        tags: ['Menu Logos'],
+        responses: {
+          '200': {
+            description: 'Site logo path',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string', example: 'success' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        logo: { type: 'string', nullable: true, example: '/uploads/menus/logo-123.png' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
-        ],
+        }
+      },
+      put: {
+        summary: 'Upload or replace global site logo',
+        tags: ['Menu Logos'],
+        security: [{ CookieAuth: [] }],
         requestBody: {
           required: true,
           content: {
@@ -1409,7 +1437,13 @@ const swaggerConfig = {
                   type: 'object',
                   properties: {
                     status: { type: 'string', example: 'success' },
-                    data: { $ref: '#/components/schemas/Menu' }
+                    data: {
+                      type: 'object',
+                      properties: {
+                        message: { type: 'string', example: 'Logo updated successfully' },
+                        logo: { type: 'string', example: '/uploads/menus/logo-123.png' }
+                      }
+                    }
                   }
                 }
               }
@@ -1430,534 +1464,11 @@ const swaggerConfig = {
                 schema: { $ref: '#/components/schemas/JSendError' }
               }
             }
-          },
-          '404': {
-            description: 'Menu not found',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/JSendError' }
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/menus/{menuId}/items': {
-      post: {
-        summary: 'Add a menu item to a menu',
-        tags: ['Menu Items'],
-        security: [{ CookieAuth: [] }],
-        parameters: [
-          {
-            name: 'menuId',
-            in: 'path',
-            required: true,
-            description: 'Menu ID',
-            schema: { type: 'number' }
-          }
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                required: ['name'],
-                properties: {
-                  name: {
-                    type: 'string',
-                    minLength: 2,
-                    maxLength: 100,
-                    description: 'Menu item name',
-                    example: 'Products'
-                  },
-                  link: {
-                    type: 'string',
-                    format: 'uri',
-                    description: 'Menu item link/URL',
-                    example: '/products'
-                  },
-                  isActive: {
-                    type: 'boolean',
-                    description: 'Menu item active status',
-                    example: true
-                  },
-                  position: {
-                    type: 'number',
-                    minimum: 0,
-                    description: 'Display position',
-                    example: 1
-                  }
-                }
-              }
-            }
-          }
-        },
-        responses: {
-          '201': {
-            description: 'Menu item created successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    status: { type: 'string', example: 'success' },
-                    data: { $ref: '#/components/schemas/MenuItem' }
-                  }
-                }
-              }
-            }
-          },
-          '400': {
-            description: 'Validation error',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/JSendError' }
-              }
-            }
-          },
-          '401': {
-            description: 'Not authenticated',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/JSendError' }
-              }
-            }
-          },
-          '404': {
-            description: 'Menu not found',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/JSendError' }
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/menus/{menuId}/items/{itemId}': {
-      put: {
-        summary: 'Update a menu item',
-        tags: ['Menu Items'],
-        security: [{ CookieAuth: [] }],
-        parameters: [
-          {
-            name: 'menuId',
-            in: 'path',
-            required: true,
-            description: 'Menu ID',
-            schema: { type: 'number' }
-          },
-          {
-            name: 'itemId',
-            in: 'path',
-            required: true,
-            description: 'Menu Item ID',
-            schema: { type: 'number' }
-          }
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                minProperties: 1,
-                properties: {
-                  name: {
-                    type: 'string',
-                    minLength: 2,
-                    maxLength: 100,
-                    example: 'Updated Menu Item'
-                  },
-                  link: {
-                    type: 'string',
-                    format: 'uri',
-                    example: '/updated-link'
-                  },
-                  isActive: {
-                    type: 'boolean',
-                    example: false
-                  },
-                  position: {
-                    type: 'number',
-                    minimum: 0,
-                    example: 2
-                  }
-                }
-              }
-            }
-          }
-        },
-        responses: {
-          '200': {
-            description: 'Menu item updated successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    status: { type: 'string', example: 'success' },
-                    data: { $ref: '#/components/schemas/MenuItem' }
-                  }
-                }
-              }
-            }
-          },
-          '400': {
-            description: 'Validation error or no fields provided',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/JSendError' }
-              }
-            }
-          },
-          '401': {
-            description: 'Not authenticated',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/JSendError' }
-              }
-            }
-          },
-          '404': {
-            description: 'Menu or menu item not found',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/JSendError' }
-              }
-            }
-          }
-        }
-      },
-      delete: {
-        summary: 'Delete a menu item (cascade deletes all subitems)',
-        tags: ['Menu Items'],
-        security: [{ CookieAuth: [] }],
-        parameters: [
-          {
-            name: 'menuId',
-            in: 'path',
-            required: true,
-            description: 'Menu ID',
-            schema: { type: 'number' }
-          },
-          {
-            name: 'itemId',
-            in: 'path',
-            required: true,
-            description: 'Menu Item ID',
-            schema: { type: 'number' }
-          }
-        ],
-        responses: {
-          '200': {
-            description: 'Menu item deleted successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    status: { type: 'string', example: 'success' },
-                    data: {
-                      type: 'object',
-                      properties: {
-                        message: { type: 'string', example: 'Menu item deleted successfully' }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          '401': {
-            description: 'Not authenticated',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/JSendError' }
-              }
-            }
-          },
-          '404': {
-            description: 'Menu or menu item not found',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/JSendError' }
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/menus/{menuId}/items/{itemId}/subitems': {
-      post: {
-        summary: 'Add a submenu item to a menu item',
-        tags: ['Submenu Items'],
-        security: [{ CookieAuth: [] }],
-        parameters: [
-          {
-            name: 'menuId',
-            in: 'path',
-            required: true,
-            description: 'Menu ID',
-            schema: { type: 'number' }
-          },
-          {
-            name: 'itemId',
-            in: 'path',
-            required: true,
-            description: 'Menu Item ID',
-            schema: { type: 'number' }
-          }
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                required: ['name'],
-                properties: {
-                  name: {
-                    type: 'string',
-                    minLength: 2,
-                    maxLength: 100,
-                    description: 'Submenu item name',
-                    example: 'Electronics'
-                  },
-                  link: {
-                    type: 'string',
-                    format: 'uri',
-                    description: 'Submenu item link/URL',
-                    example: '/products/electronics'
-                  },
-                  isActive: {
-                    type: 'boolean',
-                    description: 'Submenu item active status',
-                    example: true
-                  },
-                  position: {
-                    type: 'number',
-                    minimum: 0,
-                    description: 'Display position',
-                    example: 1
-                  }
-                }
-              }
-            }
-          }
-        },
-        responses: {
-          '201': {
-            description: 'Submenu item created successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    status: { type: 'string', example: 'success' },
-                    data: { $ref: '#/components/schemas/SubMenuItem' }
-                  }
-                }
-              }
-            }
-          },
-          '400': {
-            description: 'Validation error',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/JSendError' }
-              }
-            }
-          },
-          '401': {
-            description: 'Not authenticated',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/JSendError' }
-              }
-            }
-          },
-          '404': {
-            description: 'Menu or menu item not found',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/JSendError' }
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/menus/{menuId}/items/{itemId}/subitems/{subitemId}': {
-      put: {
-        summary: 'Update a submenu item',
-        tags: ['Submenu Items'],
-        security: [{ CookieAuth: [] }],
-        parameters: [
-          {
-            name: 'menuId',
-            in: 'path',
-            required: true,
-            description: 'Menu ID',
-            schema: { type: 'number' }
-          },
-          {
-            name: 'itemId',
-            in: 'path',
-            required: true,
-            description: 'Menu Item ID',
-            schema: { type: 'number' }
-          },
-          {
-            name: 'subitemId',
-            in: 'path',
-            required: true,
-            description: 'Submenu Item ID',
-            schema: { type: 'number' }
-          }
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                minProperties: 1,
-                properties: {
-                  name: {
-                    type: 'string',
-                    minLength: 2,
-                    maxLength: 100,
-                    example: 'Updated Submenu Item'
-                  },
-                  link: {
-                    type: 'string',
-                    format: 'uri',
-                    example: '/updated-submenu-link'
-                  },
-                  isActive: {
-                    type: 'boolean',
-                    example: false
-                  },
-                  position: {
-                    type: 'number',
-                    minimum: 0,
-                    example: 2
-                  }
-                }
-              }
-            }
-          }
-        },
-        responses: {
-          '200': {
-            description: 'Submenu item updated successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    status: { type: 'string', example: 'success' },
-                    data: { $ref: '#/components/schemas/SubMenuItem' }
-                  }
-                }
-              }
-            }
-          },
-          '400': {
-            description: 'Validation error or no fields provided',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/JSendError' }
-              }
-            }
-          },
-          '401': {
-            description: 'Not authenticated',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/JSendError' }
-              }
-            }
-          },
-          '404': {
-            description: 'Menu, menu item, or submenu item not found',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/JSendError' }
-              }
-            }
-          }
-        }
-      },
-      delete: {
-        summary: 'Delete a submenu item',
-        tags: ['Submenu Items'],
-        security: [{ CookieAuth: [] }],
-        parameters: [
-          {
-            name: 'menuId',
-            in: 'path',
-            required: true,
-            description: 'Menu ID',
-            schema: { type: 'number' }
-          },
-          {
-            name: 'itemId',
-            in: 'path',
-            required: true,
-            description: 'Menu Item ID',
-            schema: { type: 'number' }
-          },
-          {
-            name: 'subitemId',
-            in: 'path',
-            required: true,
-            description: 'Submenu Item ID',
-            schema: { type: 'number' }
-          }
-        ],
-        responses: {
-          '200': {
-            description: 'Submenu item deleted successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    status: { type: 'string', example: 'success' },
-                    data: {
-                      type: 'object',
-                      properties: {
-                        message: { type: 'string', example: 'Submenu item deleted successfully' }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          '401': {
-            description: 'Not authenticated',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/JSendError' }
-              }
-            }
-          },
-          '404': {
-            description: 'Menu, menu item, or submenu item not found',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/JSendError' }
-              }
-            }
           }
         }
       }
     }
-  },
+  }
 };
 
 module.exports = swaggerConfig;

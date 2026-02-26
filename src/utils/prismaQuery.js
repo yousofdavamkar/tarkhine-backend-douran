@@ -56,8 +56,16 @@ const buildWhereClause = (filters, searchableFields = {}) => {
       continue;
     }
 
-    // Handle exact match filters
-    where[key] = value;
+    // Handle exact match filters — coerce string values from query params to proper types
+    if (value === 'true') {
+      where[key] = true;
+    } else if (value === 'false') {
+      where[key] = false;
+    } else if (!isNaN(value) && value !== '') {
+      where[key] = Number(value);
+    } else {
+      where[key] = value;
+    }
   }
 
   return where;

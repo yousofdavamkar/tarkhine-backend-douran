@@ -36,7 +36,7 @@ app.use(helmet({
 
 // 2. CORS
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : true,
   credentials: true,
 }));
 
@@ -46,11 +46,24 @@ const globalLimiter = rateLimit({
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 200,
   message: 'Too many requests from this IP'
 });
-app.use('/api', globalLimiter);
+
+if (process.env.NODE_ENV !== 'development') {
+  app.use('/api', globalLimiter);
+}
+
+// ===============================
+// JSend Middleware
+// ===============================
+app.use(JSend.middleware);
+app.use(jsendMiddleware);
 
 // 4. Body parsing limits
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
+// Static file serving for uploads/logos
+const path = require('path');
+app.use(express.static(path.join(process.cwd(), 'public')));
 
 // 5. Parameter pollution protection
 app.use(hpp());
@@ -62,12 +75,6 @@ app.use(cookieParser(process.env.COOKIE_SECRET));
 // Logging
 // ===============================
 app.use(logger());
-
-// ===============================
-// JSend Middleware
-// ===============================
-app.use(JSend.middleware);
-app.use(jsendMiddleware);
 
 // ===============================
 // Input Sanitization

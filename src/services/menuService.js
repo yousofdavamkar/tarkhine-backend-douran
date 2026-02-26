@@ -16,19 +16,14 @@ const makeMenuService = () => ({
   },
 
   /**
-   * Find menu by ID with all items and subitems
+   * Find menu by ID with all submenus
    */
   findById: async (id) => {
     const menu = await prisma.menu.findUnique({
       where: { id: parseInt(id) },
       include: {
-        items: {
-          orderBy: { position: 'asc' },
-          include: {
-            subitems: {
-              orderBy: { position: 'asc' }
-            }
-          }
+        submenus: {
+          orderBy: { position: 'asc' }
         }
       }
     });
@@ -41,16 +36,34 @@ const makeMenuService = () => ({
   },
 
   /**
-   * Create new menu
+   * Create new menu with optional submenus
    */
   create: async (data) => {
+    const { submenus, ...menuData } = data;
+
+    const createPayload = {
+      ...menuData
+    };
+
+    if (submenus && submenus.length > 0) {
+      createPayload.submenus = {
+        create: submenus.map(sub => {
+          const { id, ...subData } = sub; // Discard client IDs for create
+          return subData;
+        })
+      };
+    }
+
     return await prisma.menu.create({
-      data
+      data: createPayload,
+      include: {
+        submenus: true
+      }
     });
   },
 
   /**
-   * Update menu
+   * Update menu (fully replaces submenus)
    */
   update: async (id, data) => {
     const existing = await prisma.menu.findUnique({
@@ -61,40 +74,33 @@ const makeMenuService = () => ({
       throw new Error('Menu not found');
     }
 
-    return await prisma.menu.update({
-      where: { id: parseInt(id) },
-      data
-    });
-  },
+    const { submenus, ...menuData } = data;
 
-  /**
-   * Update menu logo
-   */
-  updateLogo: async (id, logoPath) => {
-    const existing = await prisma.menu.findUnique({
-      where: { id: parseInt(id) }
-    });
+    const updatePayload = {
+      ...menuData
+    };
 
-    if (!existing) {
-      throw new Error('Menu not found');
+    if (submenus) {
+      updatePayload.submenus = {
+        deleteMany: {},
+        create: submenus.map(sub => {
+          const { id, ...subData } = sub; // Discard IDs to create new rows
+          return subData;
+        })
+      };
     }
 
-    // Delete old logo if exists
-    if (existing.logo) {
-      const oldLogoPath = path.join(process.cwd(), 'public', existing.logo);
-      if (fs.existsSync(oldLogoPath)) {
-        fs.unlinkSync(oldLogoPath);
+    return await prisma.menu.update({
+      where: { id: parseInt(id) },
+      data: updatePayload,
+      include: {
+        submenus: true
       }
-    }
-
-    return await prisma.menu.update({
-      where: { id: parseInt(id) },
-      data: { logo: logoPath }
     });
   },
 
   /**
-   * Delete menu
+   * Delete menu (cascade deletes all nested items via Prisma schema)
    */
   delete: async (id) => {
     const existing = await prisma.menu.findUnique({
@@ -105,223 +111,11 @@ const makeMenuService = () => ({
       throw new Error('Menu not found');
     }
 
-    // Delete logo file if exists
-    if (existing.logo) {
-      const logoPath = path.join(process.cwd(), 'public', existing.logo);
-      if (fs.existsSync(logoPath)) {
-        fs.unlinkSync(logoPath);
-      }
-    }
-
     await prisma.menu.delete({
       where: { id: parseInt(id) }
     });
 
     return { message: 'Menu deleted successfully' };
-  },
-
-  /**
-   * Add menu item to a menu
-   */
-  addMenuItem: async (menuId, data) => {
-    // Check if menu exists
-    const menu = await prisma.menu.findUnique({
-      where: { id: parseInt(menuId) }
-    });
-
-    if (!menu) {
-      throw new Error('Menu not found');
-    }
-
-    return await prisma.menuItem.create({
-      data: {
-        ...data,
-        menuId: parseInt(menuId)
-      }
-    });
-  },
-
-  /**
-   * Update menu item
-   */
-  updateMenuItem: async (menuId, itemId, data) => {
-    // Check if menu exists
-    const menu = await prisma.menu.findUnique({
-      where: { id: parseInt(menuId) }
-    });
-
-    if (!menu) {
-      throw new Error('Menu not found');
-    }
-
-    // Check if item exists and belongs to menu
-    const existing = await prisma.menuItem.findFirst({
-      where: {
-        id: parseInt(itemId),
-        menuId: parseInt(menuId)
-      }
-    });
-
-    if (!existing) {
-      throw new Error('Menu item not found');
-    }
-
-    return await prisma.menuItem.update({
-      where: { id: parseInt(itemId) },
-      data
-    });
-  },
-
-  /**
-   * Delete menu item
-   */
-  deleteMenuItem: async (menuId, itemId) => {
-    // Check if menu exists
-    const menu = await prisma.menu.findUnique({
-      where: { id: parseInt(menuId) }
-    });
-
-    if (!menu) {
-      throw new Error('Menu not found');
-    }
-
-    // Check if item exists and belongs to menu
-    const existing = await prisma.menuItem.findFirst({
-      where: {
-        id: parseInt(itemId),
-        menuId: parseInt(menuId)
-      }
-    });
-
-    if (!existing) {
-      throw new Error('Menu item not found');
-    }
-
-    await prisma.menuItem.delete({
-      where: { id: parseInt(itemId) }
-    });
-
-    return { message: 'Menu item deleted successfully' };
-  },
-
-  /**
-   * Add submenu item to a menu item
-   */
-  addSubMenuItem: async (menuId, itemId, data) => {
-    // Check if menu exists
-    const menu = await prisma.menu.findUnique({
-      where: { id: parseInt(menuId) }
-    });
-
-    if (!menu) {
-      throw new Error('Menu not found');
-    }
-
-    // Check if menu item exists and belongs to menu
-    const menuItem = await prisma.menuItem.findFirst({
-      where: {
-        id: parseInt(itemId),
-        menuId: parseInt(menuId)
-      }
-    });
-
-    if (!menuItem) {
-      throw new Error('Menu item not found');
-    }
-
-    return await prisma.subMenuItem.create({
-      data: {
-        ...data,
-        menuItemId: parseInt(itemId)
-      }
-    });
-  },
-
-  /**
-   * Update submenu item
-   */
-  updateSubMenuItem: async (menuId, itemId, subitemId, data) => {
-    // Check if menu exists
-    const menu = await prisma.menu.findUnique({
-      where: { id: parseInt(menuId) }
-    });
-
-    if (!menu) {
-      throw new Error('Menu not found');
-    }
-
-    // Check if menu item exists and belongs to menu
-    const menuItem = await prisma.menuItem.findFirst({
-      where: {
-        id: parseInt(itemId),
-        menuId: parseInt(menuId)
-      }
-    });
-
-    if (!menuItem) {
-      throw new Error('Menu item not found');
-    }
-
-    // Check if submenu item exists and belongs to menu item
-    const existing = await prisma.subMenuItem.findFirst({
-      where: {
-        id: parseInt(subitemId),
-        menuItemId: parseInt(itemId)
-      }
-    });
-
-    if (!existing) {
-      throw new Error('Submenu item not found');
-    }
-
-    return await prisma.subMenuItem.update({
-      where: { id: parseInt(subitemId) },
-      data
-    });
-  },
-
-  /**
-   * Delete submenu item
-   */
-  deleteSubMenuItem: async (menuId, itemId, subitemId) => {
-    // Check if menu exists
-    const menu = await prisma.menu.findUnique({
-      where: { id: parseInt(menuId) }
-    });
-
-    if (!menu) {
-      throw new Error('Menu not found');
-    }
-
-    // Check if menu item exists and belongs to menu
-    const menuItem = await prisma.menuItem.findFirst({
-      where: {
-        id: parseInt(itemId),
-        menuId: parseInt(menuId)
-      }
-    });
-
-    if (!menuItem) {
-      throw new Error('Menu item not found');
-    }
-
-    // Check if submenu item exists and belongs to menu item
-    const existing = await prisma.subMenuItem.findFirst({
-      where: {
-        id: parseInt(subitemId),
-        menuItemId: parseInt(itemId)
-      }
-    });
-
-    if (!existing) {
-      throw new Error('Submenu item not found');
-    }
-
-    await prisma.subMenuItem.delete({
-      where: { id: parseInt(subitemId) }
-    });
-
-    return { message: 'Submenu item deleted successfully' };
   }
 });
 
